@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "203695116201",
+    "project_id": "home-renting-system",
+    "storage_bucket": "home-renting-system.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:203695116201:android:3de05062a1c51ab3907eb8",
+        "android_client_info": {
+          "package_name": "com.example.homerentingsystem"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCAG7Rm314zpldJCKl5OOt5qcwKM4NxQOU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
