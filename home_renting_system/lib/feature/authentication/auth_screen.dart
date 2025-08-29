@@ -1,36 +1,41 @@
-import 'package:flutter/material.dart'; // Import Flutter's material design package
+import 'package:flutter/material.dart';
+import 'login_form.dart';
+import 'register_form.dart';
 
-// This is the main StatefulWidget for the Login screen
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key, this.title = 'Authentication Page'}); // Constructor with optional title
+  const AuthScreen({super.key, this.title = 'Authentication Page'});
 
-  final String title; // Title of the page, shown in the AppBar
+  final String title;
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState(); // Creates the state for this widget
+  State<AuthScreen> createState() => _AuthScreenState();
 }
 
-// This is the state class for AuthScreen
 class _AuthScreenState extends State<AuthScreen> {
+  bool _isLogin = true;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Scaffold provides the basic visual layout structure
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        // AppBar is the top bar of the screen
-        title: Text(widget.title), // Displays the title passed to the widget
+        title: Text(widget.title),
       ),
-      body: const Center(
-        // Center aligns its child in the middle of the screen
-        child: _isLogin ? LoginForm() : RegisterForm(), // Empty placeholder, does nothing
+      body: Center(
+        child: Column(
+          children: [
+            _isLogin ? LoginForm() : RegisterForm(),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _isLogin = !_isLogin;
+                });
+              },
+              child: Text(_isLogin ? "Go to Register" : "Go to Login"),
+            ),
+          ]
+        )
       ),
-      // If you want to add a button or action later, you can add it here
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     // TODO: Add action here
-      //   },
-      //   child: const Icon(Icons.add),
-      // ),
     );
   }
 }
