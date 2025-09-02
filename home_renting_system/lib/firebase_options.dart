@@ -71,4 +71,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'home-renting-system.firebasestorage.app',
     iosBundleId: 'com.example.homeRentingSystem',
   );
+
 }
