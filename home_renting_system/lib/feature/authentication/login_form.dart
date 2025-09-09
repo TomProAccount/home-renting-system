@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../home/home_screen.dart'; // make sure you import your HomeScreen
+import '../home/router.dart';
+import 'package:go_router/go_router.dart';
+import '../../generated/l10n.dart'; // Make sure your generated localization file is imported
+import '../../main.dart';
+import 'package:provider/provider.dart';
+import 'package:home_renting_system/providers/user_provider.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -28,36 +33,37 @@ class _LoginFormState extends State<LoginForm> {
         password: _passwordController.text.trim(),
       );
 
-      // Fetch user role from Firestore
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .get();
+      final uid = userCredential.user!.uid;
 
-      final role = doc.data()?['role'] ?? 'unknown';
+      // ✅ Fetch role via provider
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final role = await userProvider.fetchUserRole(uid) ?? 'unknown';
 
-      if (!mounted) return; // STOP if widget is disposed
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("✅ Logged in as $role")),
+        SnackBar(content: Text(S.of(context).loggedInAs(role))),
       );
 
-      // Navigate based on role
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => HomeScreen()),
-      );
+      // ✅ Navigate based on role
+      if (role == 'student') {
+        context.go('/student');
+      } else if (role == 'landlord') {
+        context.go('/landlord');
+      } else {
+        context.go('/unauthorized');
+      }
 
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ ${e.message}")),
+          SnackBar(content: Text("${S.of(context).loginError} ${e.message}")),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("❌ Something went wrong")),
+          SnackBar(content: Text(S.of(context).somethingWentWrong)),
         );
       }
     } finally {
@@ -73,9 +79,9 @@ class _LoginFormState extends State<LoginForm> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const SizedBox(height: 20),
-          const Text(
-            "Login",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+          Text(
+            S.of(context).login,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -83,8 +89,17 @@ class _LoginFormState extends State<LoginForm> {
             child: TextFormField(
               controller: _emailController,
               style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration("Your Email"),
-              validator: (value) => value!.isEmpty ? "Enter your email" : null,
+              decoration: _inputDecoration(S.of(context).yourEmail),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return S.of(context).pleaseEnterEmail;
+                }
+                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                if (!emailRegex.hasMatch(value)) {
+                  return S.of(context).enterValidEmail;
+                }
+                return null;
+              },
             ),
           ),
           const SizedBox(height: 16),
@@ -94,14 +109,54 @@ class _LoginFormState extends State<LoginForm> {
               controller: _passwordController,
               style: const TextStyle(color: Colors.white),
               obscureText: _obscurePassword,
-              decoration: _inputDecoration("Your Password"),
-              validator: (value) => value!.length < 6 ? "Min 6 characters" : null,
+              decoration: _inputDecoration(S.of(context).yourPassword),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return S.of(context).pleaseEnterPassword;
+                }
+                if (value.length < 8) {
+                  return S.of(context).min8Chars;
+                }
+                if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                  return S.of(context).mustContainUppercase;
+                }
+                if (!RegExp(r'[0-9]').hasMatch(value)) {
+                  return S.of(context).mustContainNumber;
+                }
+                if (!RegExp(r'[!@#\$&*~.]').hasMatch(value)) {
+                  return S.of(context).mustContainSpecialChar;
+                }
+                if (RegExp(r'\s').hasMatch(value)) {
+                  return S.of(context).mustNotContainSpaces;
+                }
+                return null;
+              },
             ),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _loading ? null : _login,
-            child: _loading ? const CircularProgressIndicator() : const Text("Login"),
+            child: _loading ? const CircularProgressIndicator() : Text(S.of(context).login),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () => MyApp.of(context)?.setLocale(const Locale('fr')),
+                child: const Text('FR'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () => MyApp.of(context)?.setLocale(const Locale('de')),
+                child: const Text('DE'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () => MyApp.of(context)?.setLocale(const Locale('en')),
+                child: const Text('EN'),
+              ),
+            ],
           ),
         ],
       ),

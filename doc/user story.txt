@@ -5,13 +5,13 @@ user story
 as a developper, create a new projetc on github (1)
 
 as a user, i have to find in main page a login page (maybe add a button to split login as a student or a homeowner) (5)
-|_ create the login page 
+|_ create the login page
 	|_ name login space
 	|_ password login space
 	|_ check case for the role of the user
 
 as a user, i have to find in main page a register page (add a check box in the registration page for choosing your role) (5)
-|_ create the register page 
+|_ create the register page
 	|_ name register space
 	|_ password register space
 	|_ check case for the role of the user
@@ -37,3 +37,11 @@ push to github
 as a user, i want to see a clear interface (3)
 
 as a user, i want my info to be only access by the conserned person (21, no idea where to start)
+
+
+
+stuff to correct
+
+price 
+
+repository and provider in flutter

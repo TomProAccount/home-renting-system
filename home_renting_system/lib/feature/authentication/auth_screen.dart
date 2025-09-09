@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_form.dart';
 import 'register_form.dart';
+import '../../generated/l10n.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, this.title = 'Authentication Page'});
@@ -31,7 +32,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   _isLogin = !_isLogin;
                 });
               },
-              child: Text(_isLogin ? "Go to Register" : "Go to Login"),
+              child: Text(_isLogin ? S.of(context).goToRegister : S.of(context).goToLogin),
             ),
           ]
         )

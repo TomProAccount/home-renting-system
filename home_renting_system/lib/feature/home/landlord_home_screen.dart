@@ -1,33 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../../providers/house_provider.dart';
+import 'labeled_text_field.dart';
 
-class LandlordHomeScreen extends StatelessWidget {
-  LandlordHomeScreen({super.key});
+class LandlordHomeScreen extends StatefulWidget {
+  const LandlordHomeScreen({super.key});
 
+  @override
+  State<LandlordHomeScreen> createState() => _LandlordHomeScreenState();
+}
+
+class _LandlordHomeScreenState extends State<LandlordHomeScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     final user = _auth.currentUser!;
+    final houseProvider = Provider.of<HouseProvider>(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Your Houses'),
-      ),
+      appBar: AppBar(title: const Text('Your Houses')),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('houses')
-            .where('ownerId', isEqualTo: user.uid)
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
+        stream: houseProvider.getHousesByOwner(user.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          print("snapshot: $snapshot");
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No houses yet'));
+            return const Center(child: Text('No houses yet.'));
           }
 
           final houses = snapshot.data!.docs;
@@ -47,7 +52,24 @@ class LandlordHomeScreen extends StatelessWidget {
                       Text('Size: ${house['size']} m²'),
                       Text('Price: \$${house['price']}'),
                       Text('Internet: ${house['internet']}'),
-                      Text('Rented: ${house['rented'] ? "Yes" : "No"}'),
+                      Text('Status: ${house['isActive'] ? "Active" : "Inactive"}'),
+                    ],
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(house['isActive'] ? Icons.visibility : Icons.visibility_off),
+                        onPressed: () {
+                          houseProvider.toggleHouseActive(house.id, house['isActive']);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {
+                          _showHouseDialog(houseProvider, user.uid, house);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -57,70 +79,94 @@ class LandlordHomeScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddHouseDialog(context, user.uid),
+        onPressed: () => _showHouseDialog(houseProvider, user.uid),
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  void _showAddHouseDialog(BuildContext context, String ownerId) {
-    final _titleController = TextEditingController();
-    final _typeController = TextEditingController();
-    final _sizeController = TextEditingController();
-    final _priceController = TextEditingController();
-    String _internet = 'none';
-    bool _rented = false;
+  void _showHouseDialog(HouseProvider houseProvider, String ownerId, [QueryDocumentSnapshot? house]) {
+    final _titleController = TextEditingController(text: house?['title'] ?? '');
+    final _typeController = TextEditingController(text: house?['type'] ?? '');
+    final _sizeController = TextEditingController(text: house?['size']?.toString() ?? '');
+    final _priceController = TextEditingController(text: house?['price']?.toString() ?? '');
+    String _internet = house?['internet'] ?? 'none';
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New House'),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(controller: _titleController, decoration: const InputDecoration(labelText: 'Title')),
-              TextField(controller: _typeController, decoration: const InputDecoration(labelText: 'Type (house/apartment)')),
-              TextField(controller: _sizeController, decoration: const InputDecoration(labelText: 'Size (m²)'), keyboardType: TextInputType.number),
-              TextField(controller: _priceController, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.number),
-              DropdownButtonFormField<String>(
-                value: _internet,
-                decoration: const InputDecoration(labelText: 'Internet'),
-                items: const [
-                  DropdownMenuItem(value: 'none', child: Text('None')),
-                  DropdownMenuItem(value: 'wifi', child: Text('WiFi')),
-                  DropdownMenuItem(value: 'ethernet', child: Text('Ethernet')),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(house == null ? 'Add New House' : 'Edit House'),
+          content: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  LabeledTextField(
+                    label: 'Title',
+                    controller: _titleController,
+                    validator: (v) => v!.isEmpty ? 'Title is required' : null,
+                  ),
+                  LabeledTextField(
+                    label: 'Type of dwelling',
+                    controller: _typeController,
+                    validator: (v) => v!.isEmpty ? 'Type is required' : null,
+                  ),
+                  LabeledTextField(
+                    label: 'Size (m²)',
+                    controller: _sizeController,
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v!.isEmpty ? 'Size is required' : null,
+                  ),
+                  LabeledTextField(
+                    label: 'Price (CHF)',
+                    controller: _priceController,
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v!.isEmpty ? 'Price is required' : null,
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: _internet,
+                    decoration: const InputDecoration(labelText: 'Internet'),
+                    items: const [
+                      DropdownMenuItem(value: 'none', child: Text('None')),
+                      DropdownMenuItem(value: 'wifi', child: Text('WiFi')),
+                      DropdownMenuItem(value: 'ethernet', child: Text('Ethernet')),
+                    ],
+                    onChanged: (value) => setState(() => _internet = value!),
+                  ),
                 ],
-                onChanged: (value) => _internet = value!,
               ),
-              CheckboxListTile(
-                value: _rented,
-                title: const Text('Rented'),
-                onChanged: (value) => _rented = value!,
-              ),
-            ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (!_formKey.currentState!.validate()) return;
+
+                final size = int.tryParse(_sizeController.text) ?? 0;
+                final price = double.tryParse(_priceController.text) ?? 0.0;
+
+                final houseData = {
+                  'title': _titleController.text,
+                  'type': _typeController.text,
+                  'size': size,
+                  'price': price,
+                  'internet': _internet,
+                };
+
+                if (house == null) {
+                  await houseProvider.addHouse(ownerId, houseData);
+                } else {
+                  await houseProvider.updateHouse(house.id, houseData);
+                }
+
+                Navigator.pop(context);
+              },
+              child: Text(house == null ? 'Add' : 'Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final size = int.tryParse(_sizeController.text) ?? 0;
-              final price = double.tryParse(_priceController.text) ?? 0.0;
-              await FirebaseFirestore.instance.collection('houses').add({
-                'ownerId': ownerId,
-                'title': _titleController.text,
-                'type': _typeController.text,
-                'size': size,
-                'price': price,
-                'internet': _internet,
-                'rented': _rented,
-                'createdAt': FieldValue.serverTimestamp(),
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }
