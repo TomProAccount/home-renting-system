@@ -14,6 +14,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool _isLogin = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,21 +22,41 @@ class _AuthScreenState extends State<AuthScreen> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          children: [
-            _isLogin ? LoginForm() : RegisterForm(),
-            const SizedBox(height: 20),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _isLogin = !_isLogin;
-                });
-              },
-              child: Text(_isLogin ? S.of(context).goToRegister : S.of(context).goToLogin),
-            ),
-          ]
-        )
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _isLogin ? const LoginForm() : const RegisterForm(),
+                      const SizedBox(height: 20),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _isLogin = !_isLogin;
+                          });
+                        },
+                        child: Text(
+                          _isLogin
+                              ? S.of(context).goToRegister
+                              : S.of(context).goToLogin,
+                        ),
+                      ),
+                      const Spacer(), // pushes content to top if not enough height
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

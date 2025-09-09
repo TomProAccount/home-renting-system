@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -48,7 +49,7 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Type: ${house['type']}'),
+                      Text('Type of housing: ${house['type']}'),
                       Text('Size: ${house['size']} m²'),
                       Text('Price: \$${house['price']}'),
                       Text('Internet: ${house['internet']}'),
@@ -108,21 +109,42 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen> {
                     validator: (v) => v!.isEmpty ? 'Title is required' : null,
                   ),
                   LabeledTextField(
-                    label: 'Type of dwelling',
+                    label: 'Type of housing',
                     controller: _typeController,
-                    validator: (v) => v!.isEmpty ? 'Type is required' : null,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')), // letters and spaces
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Type is required';
+                      if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(v)) return 'Only letters allowed';
+                      return null;
+                    },
                   ),
                   LabeledTextField(
                     label: 'Size (m²)',
                     controller: _sizeController,
                     keyboardType: TextInputType.number,
-                    validator: (v) => v!.isEmpty ? 'Size is required' : null,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly, // allows only digits
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Size is required';
+                      if (!RegExp(r'^\d+$').hasMatch(v)) return 'Only numbers allowed';
+                      return null;
+                    },
                   ),
                   LabeledTextField(
                     label: 'Price (CHF)',
                     controller: _priceController,
                     keyboardType: TextInputType.number,
-                    validator: (v) => v!.isEmpty ? 'Price is required' : null,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly, // allows only digits
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Price is required';
+                      if (!RegExp(r'^\d+$').hasMatch(v)) return 'Only numbers allowed';
+                      return null;
+                    },
                   ),
                   DropdownButtonFormField<String>(
                     value: _internet,

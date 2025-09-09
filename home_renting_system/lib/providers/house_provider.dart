@@ -8,7 +8,7 @@ class HouseProvider with ChangeNotifier {
     return _firestore
         .collection('houses')
         .where('ownerId', isEqualTo: ownerId)
-        // .orderBy('createdAt', descending: true)
+        .orderBy('createdAt', descending: true)
         .snapshots();
   }
 
