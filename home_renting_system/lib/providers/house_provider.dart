@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../repositories/house_repository.dart';
 
 class HouseProvider with ChangeNotifier {
+  // final HouseRepository repository;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Stream<QuerySnapshot> getHousesByOwner(String ownerId) {

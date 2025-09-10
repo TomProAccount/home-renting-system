@@ -1,6 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class HouseRepository {
+class HouseProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Stream<QuerySnapshot> getHousesByOwner(String ownerId) {
@@ -12,21 +13,20 @@ class HouseRepository {
   }
 
   Future<void> addHouse(String ownerId, Map<String, dynamic> data) async {
-    await _firestore.collection('houses').add({
-      ...data,
-      'ownerId': ownerId,
-      'isActive': true,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    data['ownerId'] = ownerId;
+    data['isActive'] = true;
+    data['createdAt'] = FieldValue.serverTimestamp();
+    await _firestore.collection('houses').add(data);
+    notifyListeners();
   }
 
-  Future<void> updateHouse(String houseId, Map<String, dynamic> data) async {
-    await _firestore.collection('houses').doc(houseId).update(data);
+  Future<void> updateHouse(String id, Map<String, dynamic> data) async {
+    await _firestore.collection('houses').doc(id).update(data);
+    notifyListeners();
   }
 
-  Future<void> toggleHouseActive(String houseId, bool currentState) async {
-    await _firestore.collection('houses').doc(houseId).update({
-      'isActive': !currentState,
-    });
+  Future<void> toggleHouseActive(String id, bool currentStatus) async {
+    await _firestore.collection('houses').doc(id).update({'isActive': !currentStatus});
+    notifyListeners();
   }
 }

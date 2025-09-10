@@ -42,6 +42,26 @@ as a user, i want my info to be only access by the conserned person (21, no idea
 
 stuff to correct
 
-price 
+price
 
 repository and provider in flutter
+
+
+add a setting page
+
+utils
+
+
+
+STUFF TO DO NOW
+
+open and use androidstudiot
+
+make a good repository and provider file in flutter!!!!!!!
+
+the model
+
+rename folder correctly
+
+make a "util" folder
+
