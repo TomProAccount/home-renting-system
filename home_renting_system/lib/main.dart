@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:home_renting_system/repositories/house_repository.dart';
 import 'firebase_options.dart';
-import 'feature/home/router.dart';
+import 'screens/home/router.dart';
 import 'generated/l10n.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +18,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => HouseProvider()),
+        ChangeNotifierProvider(create: (_) => HouseProvider(HouseRepository())),
       ],
       child: const MyApp(),
     ),

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -41,7 +40,7 @@ final GoRouter router = GoRouter(
 /// Role guard function
 Future<String?> _roleGuard(String requiredRole) async {
   final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return '/login'; // Not logged in
+  if (user == null) return '/'; // Not logged in
 
   final doc = await FirebaseFirestore.instance
       .collection('users')

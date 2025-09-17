@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../../main.dart'; // Needed for MyApp.of(context)?.setLocale
 import '../../generated/l10n.dart'; // Your generated localization file

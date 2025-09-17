@@ -1,34 +1,51 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/house.dart';
 import '../repositories/house_repository.dart';
 
 class HouseProvider with ChangeNotifier {
-  // final HouseRepository repository;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final HouseRepository repository;
 
-  Stream<QuerySnapshot> getHousesByOwner(String ownerId) {
-    return _firestore
-        .collection('houses')
-        .where('ownerId', isEqualTo: ownerId)
-        .orderBy('createdAt', descending: true)
-        .snapshots();
+  HouseProvider(this.repository);
+
+  List<House> _houses = [];
+  bool _isLoading = false;
+
+  List<House> get houses => _houses;
+  bool get isLoading => _isLoading;
+
+  void getHousesByOwner(String ownerId) {
+    _isLoading = true;
+    notifyListeners();
+
+    repository.getHousesByOwner(ownerId).listen((housesData) {
+      _houses = housesData;
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
-  Future<void> addHouse(String ownerId, Map<String, dynamic> data) async {
-    data['ownerId'] = ownerId;
-    data['isActive'] = true;
-    data['createdAt'] = FieldValue.serverTimestamp();
-    await _firestore.collection('houses').add(data);
+  void getAllHouses() {
+    _isLoading = true;
+    notifyListeners();
+
+    repository.getAllHouses().listen((housesData) {
+      _houses = housesData;
+      _isLoading = false;
+      notifyListeners();
+    });
+  }
+
+  Future<void> addHouse(House house) async {
+    await repository.addHouse(house);
     notifyListeners();
   }
 
-  Future<void> updateHouse(String id, Map<String, dynamic> data) async {
-    await _firestore.collection('houses').doc(id).update(data);
+  Future<void> updateHouse(House house) async {
+    await repository.updateHouse(house); // repository accepts House
     notifyListeners();
   }
 
   Future<void> toggleHouseActive(String id, bool currentStatus) async {
-    await _firestore.collection('houses').doc(id).update({'isActive': !currentStatus});
-    notifyListeners();
+    await repository.toggleHouseActive(id, currentStatus);
   }
 }
