@@ -1,21 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../authentication/auth_screen.dart';
-import '../../providers/house_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../providers/house_provider.dart';
+import '../widgets/house_widget.dart';
 
-class StudentHomeScreen extends StatelessWidget {
+class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
+
+  @override
+  State<StudentHomeScreen> createState() => _StudentHomeScreenState();
+}
+
+class _StudentHomeScreenState extends State<StudentHomeScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch houses only if the user is logged in
+    Future.microtask(() {
+      if (FirebaseAuth.instance.currentUser != null) {
+        Provider.of<HouseProvider>(context, listen: false).getAllHouses();
+      } else {
+        print('User is not logged in, skipping Firestore fetch.');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final houseProvider = Provider.of<HouseProvider>(context);
-
-    // fetch houses when screen loads (for StatelessWidget, do it here)
-    if (!houseProvider.isLoading && houseProvider.houses.isEmpty) {
-      houseProvider.getAllHouses();
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -24,11 +39,13 @@ class StudentHomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const AuthScreen()),
-                    (route) => false,
-              );
+              try {
+                await FirebaseAuth.instance.signOut();
+                Provider.of<HouseProvider>(context, listen: false).clearHouses();
+                context.go('/'); // <-- redirect after logout
+              } catch (e) {
+                print('Logout failed: $e');
+              }
             },
           ),
         ],
@@ -47,33 +64,11 @@ class StudentHomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // ✅ Expanded list using provider state
+          // Expanded list using provider state
           Expanded(
-            child: houseProvider.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : houseProvider.houses.isEmpty
-                ? const Center(child: Text('No houses available.'))
-                : ListView.builder(
-              itemCount: houseProvider.houses.length,
-              itemBuilder: (context, index) {
-                final house = houseProvider.houses[index];
-                return Card(
-                  margin: const EdgeInsets.all(12),
-                  child: ListTile(
-                    title: Text(house.title),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Type: ${house.type}'),
-                        Text('Size: ${house.size} m²'),
-                        Text('Price: \$${house.price}'),
-                        Text('Internet: ${house.internet == "none" ? "No" : house.internet}'),
-                        Text('Status: ${house.isActive ? "Active" : "Inactive"}'),
-                      ],
-                    ),
-                  ),
-                );
-              },
+            child: HouseListWidget(
+              houses: houseProvider.houses,
+              isLoading: houseProvider.isLoading,
             ),
           ),
         ],
@@ -81,6 +76,3 @@ class StudentHomeScreen extends StatelessWidget {
     );
   }
 }
-
-
-// do a widget!!!!!

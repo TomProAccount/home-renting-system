@@ -10,6 +10,7 @@ class House {
   final String internet;
   final String? ownerId;
   final DateTime? createdAt;
+  final bool furnished;
 
   House({
     required this.id,
@@ -21,6 +22,7 @@ class House {
     required this.internet,
     this.ownerId,
     this.createdAt,
+    this.furnished = false,
   });
 
   factory House.fromMap(Map<String, dynamic> map, String id) {
@@ -33,6 +35,7 @@ class House {
       internet: map['internet'] ?? 'none',
       ownerId: map['ownerId'],
       createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
+      furnished: map['furnished'] ?? false,
     );
   }
 
@@ -43,6 +46,7 @@ class House {
       'type': type,
       'size': size,
       'internet': internet,
+      'furnished': furnished,
     };
   }
 }

@@ -5,6 +5,7 @@ import '../../main.dart'; // Needed for MyApp.of(context)?.setLocale
 import '../../generated/l10n.dart'; // Your generated localization file
 import 'package:provider/provider.dart';
 import 'package:home_renting_system/providers/user_provider.dart';
+import '../../models/user.dart' as app_user; // <-- alias here
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -18,6 +19,8 @@ class _RegisterFormState extends State<RegisterForm> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _surnameController = TextEditingController();
   bool _obscurePassword = true;
   String _role = "student";
   bool _loading = false;
@@ -40,23 +43,27 @@ class _RegisterFormState extends State<RegisterForm> {
         password: _passwordController.text.trim(),
       );
 
-      // Save extra info in Firestore
-
-      await userProvider.saveUser(
-        uid: userCredential.user!.uid,
+      // Create User object with Firebase UID
+      final newUser = app_user.User(
+        id: userCredential.user!.uid,           // <- Use Firebase UID here
         email: _emailController.text.trim(),
+        name: _nameController.text.trim(),
+        surname: _surnameController.text.trim(),
         role: _role,
       );
+
+      // Save to Firestore via provider
+      await userProvider.saveUser(newUser);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(S.of(context).registeredAs(_role))),
       );
 
-      // Navigate using GoRouter
+      // Navigate using GoRouter based on role
       if (_role == "student") {
-        context.go('/student-home');
+        context.go('/student');
       } else if (_role == "landlord") {
-        context.go('/landlord-home');
+        context.go('/landlord');
       }
 
     } on FirebaseAuthException catch (e) {
@@ -81,6 +88,10 @@ class _RegisterFormState extends State<RegisterForm> {
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 20),
+          _buildInput("Name", _nameController, false),
+          const SizedBox(height: 16),
+          _buildInput("Surname", _surnameController, false),
+          const SizedBox(height: 16),
           _buildInput(S.of(context).yourEmail, _emailController, false),
           const SizedBox(height: 16),
           _buildInput(S.of(context).yourPassword, _passwordController, true),

@@ -33,9 +33,10 @@ class _LoginFormState extends State<LoginForm> {
 
       final uid = userCredential.user!.uid;
 
-      // ✅ Fetch role via provider
+      // Fetch role via provider
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final role = await userProvider.fetchUserRole(uid) ?? 'unknown';
+      await userProvider.fetchUser(uid);
+      final role = userProvider.currentUser!.role;
 
       if (!mounted) return;
 
@@ -43,7 +44,7 @@ class _LoginFormState extends State<LoginForm> {
         SnackBar(content: Text(S.of(context).loggedInAs(role))),
       );
 
-      // ✅ Navigate based on role
+      // Navigate based on role
       if (role == 'student') {
         context.go('/student');
       } else if (role == 'landlord') {
