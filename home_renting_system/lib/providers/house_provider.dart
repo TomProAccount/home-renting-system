@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/house.dart';
@@ -10,12 +11,15 @@ class HouseProvider with ChangeNotifier {
 
   List<House> _houses = [];
   bool _isLoading = false;
+  StreamSubscription<List<House>>? _housesSubscription; // <-- track stream
 
   List<House> get houses => _houses;
   bool get isLoading => _isLoading;
 
-  // Clear houses when user logs out
+  // Cancel listeners + clear houses when user logs out
   void clearHouses() {
+    _housesSubscription?.cancel(); // <-- stop Firestore listener
+    _housesSubscription = null;
     _houses = [];
     _isLoading = false;
     notifyListeners();
@@ -26,20 +30,20 @@ class HouseProvider with ChangeNotifier {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       print('No logged-in user, skipping Firestore fetch');
-      _houses = [];
-      _isLoading = false;
-      notifyListeners();
+      clearHouses();
       return;
     }
 
     _isLoading = true;
     notifyListeners();
 
-    repository.getHousesByOwner(ownerId).listen((housesData) {
-      _houses = housesData;
-      _isLoading = false;
-      notifyListeners();
-    });
+    _housesSubscription?.cancel(); // cancel previous subscription
+    _housesSubscription =
+        repository.getHousesByOwner(ownerId).listen((housesData) {
+          _houses = housesData;
+          _isLoading = false;
+          notifyListeners();
+        });
   }
 
   // Safe fetch all houses
@@ -47,26 +51,25 @@ class HouseProvider with ChangeNotifier {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       print('No logged-in user, skipping Firestore fetch');
-      _houses = [];
-      _isLoading = false;
-      notifyListeners();
+      clearHouses();
       return;
     }
 
     _isLoading = true;
     notifyListeners();
 
-    repository.getAllHouses().listen((housesData) {
-      _houses = housesData;
-      _isLoading = false;
-      notifyListeners();
-    });
+    _housesSubscription?.cancel(); // cancel previous subscription
+    _housesSubscription =
+        repository.getAllHouses().listen((housesData) {
+          _houses = housesData;
+          _isLoading = false;
+          notifyListeners();
+        });
   }
 
   Future<void> addHouse(House house) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return; // prevent permission error
-
+    if (user == null) return;
     await repository.addHouse(house);
     notifyListeners();
   }
@@ -74,7 +77,6 @@ class HouseProvider with ChangeNotifier {
   Future<void> updateHouse(House house) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-
     await repository.updateHouse(house);
     notifyListeners();
   }

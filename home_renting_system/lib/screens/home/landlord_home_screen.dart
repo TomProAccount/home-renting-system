@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/house_provider.dart';
 import '../widgets/house_widget.dart';
@@ -29,7 +30,21 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen> {
     final houseProvider = Provider.of<HouseProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Your Houses')),
+      appBar: AppBar(title: const Text('Your Houses'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              try {
+                await FirebaseAuth.instance.signOut();
+                Provider.of<HouseProvider>(context, listen: false).clearHouses();
+                context.go('/'); // <-- redirect after logout
+              } catch (e) {
+                print('Logout failed: $e');
+              }
+            },
+          ),
+        ],),
       body: houseProvider.isLoading || houseProvider.houses.isEmpty
           ? HouseListWidget(
         houses: houseProvider.houses,
